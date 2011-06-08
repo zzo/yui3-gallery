@@ -237,35 +237,43 @@ Y.Test.Runner.subscribe(Y.Test.Runner.COMPLETE_EVENT,
     function(data) {
         var cover_out = Y.Test.Runner.getCoverage(Y.Coverage.Format.JSON),
             report_data = Y.Test.Format.JUnitXML(data.results);
-        Y.io('/jute/_test_report', 
-            {
-                method: 'POST',
-                data: 'results=' + escape(report_data) + '&name=' + escape(data.results.name) + "&coverage=" + escape(cover_out),
-                on: {
-                    success: function(tid, args) {
-                        if (!window.location.toString().match("_one_shot")) {
-                            window.location.href = '/jute_docs/run_tests.html';
+        if (window.__done) {
+            // V8!!
+            window.__done(data, report_data, typeof(_yuitest_coverage) == 'object' ? _yuitest_coverage : null, cover_out);
+        } else {
+            // BROWSER!!
+            Y.io('/jute/_test_report', 
+                {
+                    method: 'POST',
+                    data: 'results=' + escape(report_data) + '&name=' + escape(data.results.name) + "&coverage=" + escape(cover_out),
+                    on: {
+                        success: function(tid, args) {
+                            if (!window.location.toString().match("_one_shot")) {
+                                window.location.href = '/jute_docs/run_tests.html';
+                            }
+                        },
+                        failure: function(tid, args) {
+                            if (!window.location.toString().match("_one_shot")) {
+                                window.location.href = '/jute_docs/run_tests.html';
+                            }
                         }
-                    },
-                    failure: function(tid, args) {
-                        if (!window.location.toString().match("_one_shot")) {
-                            window.location.href = '/jute_docs/run_tests.html';
-                        }
-                    }
 
+                    }
                 }
-            }
-        );
+            );
+        }
     }
 );
 
 // some boilerplate stuff
 UT.go = function() {
     //initialize the console
-    var yconsole = new Y.Console({
-        newestOnTop: false
-    });
-    yconsole.render('#log');
+    if (Y.Console) {
+        var yconsole = new Y.Console({
+            newestOnTop: false
+        });
+        yconsole.render('#log');
+    }
 
     //run the tests
     try {
